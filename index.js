@@ -8,17 +8,8 @@ var Game = {
         this.Renderer.init(this.ctx);
     },
     step: function(time) {
-        var timer = new Timer();
-        timer.step();
-
         this.Terrain.step(time);
-
-        timer.step();
-
         this.Renderer.render(this.Terrain.tiles, this.Interaction.origin, this.Interaction.zoomLvl);
-
-        timer.step();
-        console.log(timer.get('all'));
     },
     render: function() {
         this.Renderer.render(this.Terrain.tiles, this.Interaction.origin, this.Interaction.zoomLvl);
@@ -35,8 +26,7 @@ var Game = {
             var that = this;
 
             this.ctx = ctx;
-            $('#map canvas').attr('width', 256);
-            $('#map canvas').attr('height', 256);
+            $('#map canvas').attr('width', $('#map canvas').height()).attr('height', $('#map canvas').height());
 
             this.dataArray = new Uint8ClampedArray(262144);
 
@@ -120,13 +110,13 @@ var Game = {
             }
         },
         calcWaterDistance: function(x, y, maxDistance) {
-            if (typeof maxDistance == 'undefined') maxDistance = 50;
+            if (typeof maxDistance === 'undefined') maxDistance = 50;
             if (this.data[y][x] <= this.waterLvl) return 0;
 
-            var checkDistance = 1;
+            var checkDistance, i;
 
-            for (var checkDistance = 1; checkDistance < maxDistance; checkDistance++) {
-                for (var i = 0; i < checkDistance; i++) {
+            for (checkDistance = 1; checkDistance < maxDistance; checkDistance++) {
+                for (i = 0; i < checkDistance; i++) {
                     if (x + (checkDistance - i) < 256 && y + i < 256 && this.data[y + i][x + (checkDistance - i)] <= this.waterLvl) return checkDistance;
                     if (x - i >= 0 && y + (checkDistance - i) < 256 && this.data[y + (checkDistance - i)][x - i] <= this.waterLvl) return checkDistance;
                     if (x - (checkDistance - i) >= 0 && y - i >= 0 && this.data[y - i][x - (checkDistance - i)] <= this.waterLvl) return checkDistance;
@@ -162,9 +152,6 @@ var Game = {
             });
         },
         zoom: function(direction, x, y) {
-            var timer = new Timer();
-            timer.step();
-
             var scaleFactor = Math.pow(2, this.zoomLvl);
             var cursor = {
                 before: {
@@ -176,7 +163,6 @@ var Game = {
             this.zoomLvl -= direction * 0.2;
             if (this.zoomLvl < 0) this.zoomLvl = 0;
             scaleFactor = Math.pow(2, this.zoomLvl);
-            //if (scaleFactor > 1) scaleFactor = Math.round(scaleFactor * 100) / 100;
 
             cursor.after = {
                 "x": x / scaleFactor,
@@ -186,10 +172,7 @@ var Game = {
             this.origin.x += cursor.before.x - cursor.after.x;
             this.origin.y += cursor.before.y - cursor.after.y;
 
-            timer.step();
             Game.render();
-            timer.step();
-            console.log(timer.get('all'));
         },
         onInteractionStart: function(e) {
             this.dragging = true;
@@ -205,8 +188,8 @@ var Game = {
             if (this.dragging) {
                 var scaleFactor = Math.pow(2, this.zoomLvl);
 
-                this.origin.x -= 2 * (e.screenX - this.startPos.x) / 3 / scaleFactor
-                this.origin.y -= 2 * (e.screenY - this.startPos.y) / 3 / scaleFactor
+                this.origin.x -= 2 * (e.screenX - this.startPos.x) / 3 / scaleFactor;
+                this.origin.y -= 2 * (e.screenY - this.startPos.y) / 3 / scaleFactor;
 
                 this.startPos.x = e.screenX;
                 this.startPos.y = e.screenY;
@@ -217,36 +200,116 @@ var Game = {
     },
     Renderer: {
         ctx: null,
+        rendering: 0,
         dataArray: null,
+        initialScaleFactor: 1,
+        renderWorkers: {
+            splitNumber: 1,
+            workers: []
+        },
         init: function(ctx) {
             this.ctx = ctx;
+
+            this.initialScaleFactor = ctx.canvas.height / 256;
+
+            for (var y = 0; y < this.renderWorkers.splitNumber + 1; y++) {
+                this.renderWorkers.workers[y] = [];
+
+                for (var x = 0; x < this.renderWorkers.splitNumber + 1; x++) {
+                    this.renderWorkers.workers[y][x] = Game.Manager.getWorker('renderWorker.js');
+                }
+            }
 
             this.dataArray = new Uint8ClampedArray(ctx.canvas.width * ctx.canvas.height * 4);
         },
         render: function(tiles, origin, zoomLvl) {
-            var x, y, tile_x, tile_y, color;
+            var timer = new Timer();
+            timer.step();
 
-            var scaleFactorMin = this.ctx.canvas.width / 256;
-            var scaleFactor = Helper.clamp(Math.pow(2, zoomLvl), scaleFactorMin, 100000);
+            var that = this;
 
-            origin.x = Helper.clamp(origin.x, 0, 256 * (1 - scaleFactorMin / scaleFactor));
-            origin.y = Helper.clamp(origin.y, 0, 256 * (1 - scaleFactorMin / scaleFactor));
+            if (this.rendering > 0) return;
+            this.rendering = Math.pow(this.renderWorkers.splitNumber + 1, 2);
 
-            for (y = 0; y < this.ctx.canvas.height; y++) {
-                for (x = 0; x < this.ctx.canvas.width; x++) {
-                    tile_y = Math.floor(y / scaleFactor + origin.y);
-                    tile_x = Math.floor(x / scaleFactor + origin.x);
+            var x, y, scaleFactor, colors;
 
-                    color = tiles[tile_y][tile_x].get('color');
+            scaleFactor = Math.pow(2, zoomLvl) * this.initialScaleFactor;
 
-                    this.dataArray.set(
-                        [color.red, color.green, color.blue, 255],
-                        y * this.ctx.canvas.width * 4 + x * 4
-                    );
+            origin.x = Helper.clamp(origin.x, 0, 256 * (1 - this.initialScaleFactor / scaleFactor));
+            origin.y = Helper.clamp(origin.y, 0, 256 * (1 - this.initialScaleFactor / scaleFactor));
+
+            colors = [];
+            for (y in tiles) {
+                colors[y] = [];
+
+                for (x in tiles[y]) {
+                    colors[y][x] = tiles[y][x].get('color');
+                    colors[y][x] = [colors[y][x].red, colors[y][x].green, colors[y][x].blue];
                 }
             }
 
-            this.ctx.putImageData(new ImageData(this.dataArray, this.ctx.canvas.width, this.ctx.canvas.height), 0, 0);
+            for (y = 0; y < this.renderWorkers.workers.length; y++) {
+                for (x = 0; x < this.renderWorkers.workers[y].length; x++) {
+                    Game.Manager.sendMessage(this.renderWorkers.workers[y][x], {
+                        size: this.ctx.canvas.height,
+                        splitNumber: this.renderWorkers.splitNumber,
+                        x: x,
+                        y: y,
+                        origin: origin,
+                        scaleFactor: scaleFactor,
+                        colors: colors,
+                        timeStamp: new Date().getTime()
+                    }, function (data, sentData) {
+                        timer.step();
+                        that.ctx.putImageData(
+                            data,
+                            sentData.x * Math.floor(sentData.size / (sentData.splitNumber + 1)),
+                            sentData.y * Math.floor(sentData.size / (sentData.splitNumber + 1))
+                        );
+                        that.rendering--;
+                        if (that.rendering === 0) console.log(timer.get('all'));
+                    });
+                }
+            }
+        }
+    },
+    Manager: {
+        workers: {},
+        callbacks: {},
+        init: function () {
+
+        },
+        getWorker: function (path) {
+            var that = this;
+
+            var workerId = Math.round(Math.random() * 100000);
+
+            this.workers[workerId] = new Worker(path);
+            this.workers[workerId].addEventListener('message', function (e) {
+                that.receiveMessage(e.data);
+            });
+
+            return workerId;
+        },
+        sendMessage: function (worker, data, callback) {
+            var callbackId = null;
+
+            if (typeof callback !== 'undefined') {
+                callbackId = Math.round(Math.random() * 100000);
+                this.callbacks[callbackId] = {
+                    data: data,
+                    callback: callback
+                };
+            }
+
+            this.workers[worker].postMessage({
+                callback: callbackId,
+                data: data
+            });
+        },
+        receiveMessage: function (data) {
+            this.callbacks[data.callback].callback(data.data, this.callbacks[data.callback].data);
+            delete this.callbacks[data.callback];
         }
     }
 };

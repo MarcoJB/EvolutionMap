@@ -18,13 +18,13 @@ function Tile (x, y, height, waterLvl, waterDistance) {
 
     function calcColor() {
         if (height > waterLvl) {
-            props.color.red = (225 - 110 * Math.pow(height / 255, 2)) * (1 - props.moisture);
-            props.color.green = (209 - 209 * Math.pow(height / 255, 2)) * (1 - props.moisture);
-            props.color.blue = (101 - 101 * Math.pow(height / 255, 2)) * (1 - props.moisture);
+            props.color.red = Math.round((225 - 110 * Math.pow(height / 255, 2)) * (1 - props.moisture));
+            props.color.green = Math.round((209 - 209 * Math.pow(height / 255, 2)) * (1 - props.moisture));
+            props.color.blue = Math.round((101 - 101 * Math.pow(height / 255, 2)) * (1 - props.moisture));
         } else if (height > waterLvl - 20) {
-            props.color.red = 37 + (67 - 37) * (height - (waterLvl - 20)) / 20;
-            props.color.green = 84 + (190 - 143) * (height - (waterLvl - 20)) / 20;
-            props.color.blue = 132 + (165 - 132) * (height - (waterLvl - 20)) / 20;
+            props.color.red = Math.round(37 + (67 - 37) * (height - (waterLvl - 20)) / 20);
+            props.color.green = Math.round(84 + (190 - 143) * (height - (waterLvl - 20)) / 20);
+            props.color.blue = Math.round(132 + (165 - 132) * (height - (waterLvl - 20)) / 20);
         } else {
             props.color.red = 37;
             props.color.green = 84;
@@ -47,7 +47,7 @@ function Tile (x, y, height, waterLvl, waterDistance) {
 
     this.get = function(prop) {
         return props[prop];
-    }
+    };
 
     this.getRelevantMoisture = function() {
         props.neighborsHandled++;
@@ -57,21 +57,21 @@ function Tile (x, y, height, waterLvl, waterDistance) {
         } else {
             return props.moisture_old;
         }
-    }
+    };
 
     this.setWaterLvl = function(value) {
         waterLvl = value;
         calcColor();
-    }
+    };
 
     this.setWaterDistance = function(value) {
         waterDistance = value;
-    }
+    };
 
     this.setNeighbor = function(x, y, neighbor) {
         props.neighbors[y][x] = neighbor;
         props.neighborsNumber = countNeighbors();
-    }
+    };
 
     this.step = function(time) {
         props.moisture_old = props.moisture;
@@ -102,7 +102,7 @@ function Tile (x, y, height, waterLvl, waterDistance) {
         props.neighborsHandled -= props.neighborsNumber;
 
         calcColor();
-    }
+    };
 
 
     function log(message) {

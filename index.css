@@ -8,12 +8,10 @@ html.grabbing * {
 }
 
 #map {
-    width: 768px;
-    height: 768px;
     cursor: grab;
 }
 
 #map canvas {
-    width: 768px;
-    height: 768px;
+    position: absolute;
+    height: 100vh;
 }
