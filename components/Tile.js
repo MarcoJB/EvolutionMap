@@ -5,13 +5,13 @@ function Tile (x, y, height, waterLvl, waterDistance) {
         height: height,
         waterLvl: waterLvl,
         waterDistance: waterDistance,
-        moisture: 1,
+        moisture: 0,
         moisture_old: 0,
         color: {},
         neighbors: [[null, null, null], [null, null, null], [null, null, null]],
         neighborsNumber: 0,
         neighborsHandled: 0,
-        temperature: 1,
+        temperature: 1
     };
 
     reCalc();
