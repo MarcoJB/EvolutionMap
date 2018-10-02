@@ -1,0 +1,19 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+html.grabbing * {
+    cursor: grabbing !important;
+}
+
+#map {
+    width: 768px;
+    height: 768px;
+    cursor: grab;
+}
+
+#map canvas {
+    width: 768px;
+    height: 768px;
+}
