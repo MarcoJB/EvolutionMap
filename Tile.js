@@ -5,22 +5,25 @@ function Tile (x, y, height, waterLvl, waterDistance) {
         height: height,
         waterLvl: waterLvl,
         waterDistance: waterDistance,
-        moisture: 0,
+        moisture: 1,
         moisture_old: 0,
         color: {},
         neighbors: [[null, null, null], [null, null, null], [null, null, null]],
         neighborsNumber: 0,
-        neighborsHandled: 0
+        neighborsHandled: 0,
+        temperature: 1,
     };
 
-    calcColor();
+    reCalc();
 
 
-    function calcColor() {
+    function reCalc() {
         if (height > waterLvl) {
-            props.color.red = Math.round((225 - 110 * Math.pow(height / 255, 2)) * (1 - props.moisture));
-            props.color.green = Math.round((209 - 209 * Math.pow(height / 255, 2)) * (1 - props.moisture));
-            props.color.blue = Math.round((101 - 101 * Math.pow(height / 255, 2)) * (1 - props.moisture));
+            props.temperature = Math.exp((waterLvl - height) / 200);
+
+            props.color.red = Math.round((240 - 120 * height / 255) * (1 - props.moisture));
+            props.color.green = Math.round((230 - 180 * height / 255) * (1 - props.moisture));
+            props.color.blue = Math.round((120 - 90 * height / 255) * (1 - props.moisture));
         } else if (height > waterLvl - 20) {
             props.color.red = Math.round(37 + (67 - 37) * (height - (waterLvl - 20)) / 20);
             props.color.green = Math.round(84 + (190 - 143) * (height - (waterLvl - 20)) / 20);
@@ -61,7 +64,7 @@ function Tile (x, y, height, waterLvl, waterDistance) {
 
     this.setWaterLvl = function(value) {
         waterLvl = value;
-        calcColor();
+        reCalc();
     };
 
     this.setWaterDistance = function(value) {
@@ -87,7 +90,7 @@ function Tile (x, y, height, waterLvl, waterDistance) {
                     if (props.height > props.waterLvl) {
                         diff += (Math.abs(x - 1) === Math.abs(y - 1) ? 0.7 : 1) *
                             (relevantMoisture - props.moisture) *
-                            Math.exp((props.neighbors[y][x].get('height') - props.height) / 50);
+                            Math.exp(-Math.pow(props.neighbors[y][x].get('height') - props.height, 2) / 200) * 2;
                     }
                 }
             }
@@ -97,11 +100,12 @@ function Tile (x, y, height, waterLvl, waterDistance) {
             props.moisture = 1;
         } else {
             props.moisture += time * diff / 10;
+            props.moisture *= 1 - time / 100 * props.temperature;
         }
 
         props.neighborsHandled -= props.neighborsNumber;
 
-        calcColor();
+        reCalc();
     };
 
 
