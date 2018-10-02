@@ -1,6 +1,7 @@
 function InteractionHandler(ctx) {
     var props = {
         zoomLvl: 0,
+        initialScaleFactor: ctx.canvas.height / 256,
         dragging: false,
         startPos: {},
         origin: {
@@ -66,6 +67,8 @@ function InteractionHandler(ctx) {
 
             props.origin.x -= 2 * (e.screenX - props.startPos.x) / scaleFactor * ctx.canvas.width / $(ctx.canvas).width();
             props.origin.y -= 2 * (e.screenY - props.startPos.y) / scaleFactor * ctx.canvas.height / $(ctx.canvas).height();
+            props.origin.x = Helper.clamp(props.origin.x, 0, 256 * (1 - props.initialScaleFactor / (props.scaleFactor * props.initialScaleFactor)));
+            props.origin.y = Helper.clamp(props.origin.y, 0, 256 * (1 - props.initialScaleFactor / (props.scaleFactor * props.initialScaleFactor)));
 
             props.startPos.x = e.screenX;
             props.startPos.y = e.screenY;

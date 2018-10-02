@@ -106,6 +106,10 @@ function Tile (x, y, height, waterLvl, waterDistance) {
         props.neighborsHandled -= props.neighborsNumber;
 
         reCalc();
+
+        if (height > waterLvl) {
+            if (Math.random() < 0.000001 * props.moisture) Game.Vegetation.createPlant(props.x, props.y);
+        }
     };
 
 

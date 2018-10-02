@@ -6,15 +6,20 @@ var Game = {
         this.Terrain = new Terrain(this.ctx, terrain_name);
         this.InteractionHandler = new InteractionHandler(this.ctx);
         this.Renderer = new Renderer(this.ctx);
+        this.Vegetation = new Vegetation(this.ctx);
 
         this.ctx.mozImageSmoothingEnabled = false;
     },
     step: function (time) {
         this.Terrain.step(time);
-        this.Renderer.render(this.Terrain.get('tiles'), this.InteractionHandler.get('origin'), this.InteractionHandler.get('zoomLvl'));
+        this.Renderer.prepareTerrain(this.Terrain.get('tiles'), this.InteractionHandler.get('origin'), this.InteractionHandler.get('zoomLvl'));
+        this.Renderer.prepareVegetation(this.Vegetation.get('plants'));
+        this.Renderer.render();
     },
     render: function () {
-        this.Renderer.render(this.Terrain.get('tiles'), this.InteractionHandler.get('origin'), this.InteractionHandler.get('zoomLvl'));
+        this.Renderer.prepareTerrain(this.Terrain.get('tiles'), this.InteractionHandler.get('origin'), this.InteractionHandler.get('zoomLvl'));
+        this.Renderer.prepareVegetation(this.Vegetation.get('plants'));
+        this.Renderer.render();
     }
 };
 
