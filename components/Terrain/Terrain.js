@@ -9,8 +9,6 @@ function Terrain(ctx, terrain_name) {
         dataArray: null
     };
 
-    $('#terrain').attr('width', 256).attr('height', 256);
-
     loadData(terrain_name, function () {
         generateTerrain();
         Game.render();
@@ -111,8 +109,8 @@ function Terrain(ctx, terrain_name) {
 
 
     this.step = function (time) {
-        for (var y in props.tiles) {
-            for (var x in props.tiles[y]) {
+        for (var y = 0; y < props.tiles.length; y++) {
+            for (var x = 0; x < props.tiles[y].length; x++) {
                 props.tiles[y][x].step(time);
             }
         }

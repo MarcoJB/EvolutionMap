@@ -16,3 +16,9 @@ html.grabbing * {
     height: 100vh;
     image-rendering: -moz-crisp-edges;
 }
+
+#settings {
+    position: absolute;
+    top: 50px;
+    left: 950px;
+}

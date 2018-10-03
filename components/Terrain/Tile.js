@@ -108,7 +108,9 @@ function Tile (x, y, height, waterLvl, waterDistance) {
         reCalc();
 
         if (height > waterLvl) {
-            if (Math.random() < 0.000001 * props.moisture) Game.Vegetation.createPlant(props.x, props.y);
+            if (Math.random() < time * 0.000001 * props.moisture * props.temperature) {
+                Game.Vegetation.createPlant(props.x + 0.5, props.y + 0.5);
+            }
         }
     };
 
