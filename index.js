@@ -1,6 +1,8 @@
 var Game = {
     ctx: null,
     vegetationStarted: false,
+    renderActive: true,
+    speed: 1,
     init: function (terrain_name) {
         var that = this;
 
@@ -36,15 +38,19 @@ var Game = {
             that.start('vegetation');
             $(this).addClass('started').prop('disabled', true);
         });
+
+        $('#game_speed').on('input', function(e) {
+            that.speed = Math.pow(2, e.target.value / 10);
+        });
     },
     step: function (time) {
         this.Terrain.step(time);
         if (this.vegetationStarted) this.Vegetation.step(time);
-        this.render();
+        if (this.renderActive) this.render();
     },
     render: function () {
-        this.Renderer.prepareTerrain(this.Terrain.get('tiles'), this.InteractionHandler.get('origin'), this.InteractionHandler.get('zoomLvl'));
-        if (this.vegetationStarted) this.Renderer.prepareVegetation(this.Vegetation.get('plants').unsorted);
+        this.Renderer.renderTerrain(this.Terrain.get('tiles'), this.InteractionHandler.get('origin'), this.InteractionHandler.get('zoomLvl'));
+        if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.get('plants').unsorted);
     },
     stopped: false,
     timer: null,
@@ -53,21 +59,21 @@ var Game = {
             this.stopped = false;
             this.timer = new Timer();
             this.timer.step();
-            this.run();
+            this.run(0.01);
         } else if (what === 'vegetation') {
             this.vegetationStarted = true;
         }
     },
-    run: function () {
+    run: function (time) {
         var that = this;
 
         if (!this.stopped) {
-            this.step(0.5);
+            this.step(Math.min(1, time * this.speed));
             this.timer.step();
             $('#fps').text(Math.round(10000 / this.timer.get('last')) / 10 + ' fps');
 
             setTimeout(function () {
-                that.run();
+                that.run(that.timer.get('last') / 1000);
             });
         }
     },
@@ -81,6 +87,15 @@ var Helper = {
         if (value < min) value = min;
         else if (value > max) value = max;
         return value;
+    },
+    random: function(min, max, int) {
+        if (typeof int === 'undefined') int = false;
+
+        if (int) {
+            return Math.floor(Math.random() * (max + 1 - min)) + min;
+        } else {
+            return Math.random() * (max - min) + min;
+        }
     }
 };
 

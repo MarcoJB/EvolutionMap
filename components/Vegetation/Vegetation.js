@@ -29,7 +29,7 @@ function Vegetation(ctx) {
         }
     };
 
-    this.suggestPlant = function (x, y) {
+    this.seedPlant = function (x, y) {
         var tile_x = Math.floor(x);
         var tile_y = Math.floor(y);
 
@@ -37,8 +37,28 @@ function Vegetation(ctx) {
 
         var tile = Game.Terrain.get('tiles')[tile_y][tile_x];
 
-        if (Math.random() < Math.pow(tile.get('moisture') * tile.get('temperature'), 4) / Math.pow(this.calcPlantDensity(x, y, 3), 2)) {
+        var chance = Math.random() / Math.pow(tile.get('moisture') * tile.get('temperature'), 4);
+        if (chance < 1 && chance < 1 / Math.pow(this.calcPlantDensity(x, y, 3), 2)) {
             this.createPlant(x, y);
+        }
+    };
+
+    this.killPlant = function(plant) {
+        var tile_x = Math.floor(plant.get('x'));
+        var tile_y = Math.floor(plant.get('y'));
+
+        for (var i = 0; i < props.plants.byTile[tile_y][tile_x].length; i++) {
+            if (props.plants.byTile[tile_y][tile_x][i] === plant) {
+                props.plants.byTile[tile_y][tile_x].splice(i, 1);
+                break;
+            }
+        }
+
+        for (var i = 0; i < props.plants.unsorted.length; i++) {
+            if (props.plants.unsorted[i] === plant) {
+                props.plants.unsorted.splice(i, 1);
+                break;
+            }
         }
     };
 

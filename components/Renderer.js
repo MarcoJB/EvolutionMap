@@ -7,7 +7,7 @@ function Renderer(ctx) {
     };
 
 
-    this.prepareTerrain = function (tiles, origin, zoomLvl) {
+    this.renderTerrain = function (tiles, origin, zoomLvl) {
         var x, y, tile_x, tile_y, color;
 
         props.origin.x = origin.x;
@@ -67,7 +67,7 @@ function Renderer(ctx) {
         );
     };
 
-    this.prepareVegetation = function (plants) {
+    this.renderVegetation = function (plants) {
         var plant;
 
         ctx.fillStyle = 'lime';
