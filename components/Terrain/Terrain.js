@@ -9,11 +9,14 @@ function Terrain(ctx, terrain_name) {
         worker: null,
         tileMoistures: [],
         tileMoisturesTexture: null,
-        tileHeights: []
+        tileHeights: [],
+        tilePlantDensity: [],
+        tilePlantPropability: []
     };
 
 
     this.stepMoisture = null;
+    this.stepVegetation = null;
 
 
     this.smoothTerrain = function(data) {
@@ -49,22 +52,13 @@ function Terrain(ctx, terrain_name) {
         }, 'json');
     };
 
-    this.generateTerrain = function() {
-        var tile;
-        this.props.tiles = [];
-
-        for (var y = 0; y < this.props.tileHeights.length; y++) {
-            this.props.tileMoistures[y] = [];
-
-            for (var x = 0; x < this.props.tileHeights[y].length; x++) {
-                this.props.tileMoistures[y][x] = 0;
-            }
-        }
-
-        this.stepMoisture = Game.gpu.createKernel(function(time, moistures, heights) {
+    this.kernelFunctions = {
+        'stepMoisture': function(time, moistures, heights) {
             var diff = 0;
 
             if (heights[this.thread.y][this.thread.x] <= this.constants.waterLvl) return 1;
+
+            var temperature = Math.exp((this.constants.waterLvl - heights[this.thread.y][this.thread.x]) / 200);
 
             for (var y_rel = -1; y_rel <= 1; y_rel++) {
                 if (this.thread.y + y_rel >= 0 && this.thread.y + y_rel < 256) {
@@ -77,8 +71,61 @@ function Terrain(ctx, terrain_name) {
                 }
             }
 
-            return moistures[this.thread.y][this.thread.x] + time * diff / 10;
-        }, {
+            return (moistures[this.thread.y][this.thread.x] + time * diff / 10) * (1 - time / 100 * temperature);
+        },
+        calcPlantProbabilities: function(time, moistures, heights, plantDensity) {
+            var plantsInRange = 0;
+            var localDensity = 0;
+
+            if (heights[this.thread.y][this.thread.x] <= this.constants.waterLvl) return 0;
+
+            var temperature = Math.exp((this.constants.waterLvl - heights[this.thread.y][this.thread.x]) / 200);
+
+            for (var y_rel = -3; y_rel <= 3; y_rel++) {
+                if (this.thread.y + y_rel >= 0 && this.thread.y + y_rel < 256) {
+                    for (var x_rel = -3; x_rel <= 3; x_rel++) {
+                        if (this.thread.x + x_rel >= 0 && this.thread.x + x_rel < 256) {
+                            plantsInRange += plantDensity[this.thread.y + y_rel][this.thread.x + x_rel];
+                        }
+                    }
+                }
+            }
+
+            for (var y_rel = -1; y_rel <= 1; y_rel++) {
+                if (this.thread.y + y_rel >= 0 && this.thread.y + y_rel < 256) {
+                    for (var x_rel = -1; x_rel <= 1; x_rel++) {
+                        if (this.thread.x + x_rel >= 0 && this.thread.x + x_rel < 256) {
+                            localDensity += plantDensity[this.thread.y + y_rel][this.thread.x + x_rel];
+                        }
+                    }
+                }
+            }
+            localDensity += plantDensity[this.thread.y][this.thread.x];
+
+            return (1 - Math.exp(Math.log(48 / 49) * plantsInRange)) * moistures[this.thread.y][this.thread.x] * temperature / localDensity;
+        }
+    };
+
+    this.generateTerrain = function() {
+        for (var y = 0; y < this.props.tileHeights.length; y++) {
+            this.props.tileMoistures[y] = [];
+            this.props.tilePlantDensity[y] = [];
+
+            for (var x = 0; x < this.props.tileHeights[y].length; x++) {
+                this.props.tileMoistures[y][x] = 0;
+                this.props.tilePlantDensity[y][x] = 0;
+            }
+        }
+        this.props.tilePlantDensity[0][20] = 1;
+
+        this.stepMoisture = Game.gpu.createKernel(this.kernelFunctions.stepMoisture, {
+            constants: {
+                waterLvl: this.props.waterLvl
+            },
+            output: [256, 256]
+        });
+
+        this.stepVegetation = Game.gpu.createKernel(this.kernelFunctions.calcPlantProbabilities, {
             constants: {
                 waterLvl: this.props.waterLvl
             },
@@ -86,19 +133,22 @@ function Terrain(ctx, terrain_name) {
         });
 
         this.props.tileMoistures = this.stepMoisture(0.1, this.props.tileMoistures, this.props.tileHeights);
+        this.props.tilePlantPropability = this.stepVegetation(0.1, this.props.tileMoistures, this.props.tileHeights, this.props.tilePlantDensity);
     };
 
 
 
     this.step = function (time) {
         this.props.tileMoistures = this.stepMoisture(time, this.props.tileMoistures, this.props.tileHeights);
+        this.props.tilePlantPropability = this.stepVegetation(time, this.props.tileMoistures, this.props.tileHeights, this.props.tilePlantDensity);
 
-       /* for (var y = 0; y < this.props.tiles.length; y++) {
-            for (var x = 0; x < this.props.tiles[y].length; x++) {
-                this.props.tiles[y][x].setWaterLvl(this.props.waterLvl);
-                this.props.tiles[y][x].step(time);
+        for (var y = 0; y < 256; y++) {
+            for (var x = 0; x < 256; x++) {
+                if (Math.random() < this.props.tilePlantPropability[y][x]) {
+                    this.props.tilePlantDensity[y][x]++;
+                }
             }
-        }*/
+        }
     };
 
     this.get = function (prop) {

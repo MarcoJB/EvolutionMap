@@ -78,7 +78,7 @@ var Game = {
         var fps;
 
         if (!this.stopped) {
-            this.step(Math.min(1, time * this.speed));
+            this.step(Math.min(0.5, time * this.speed));
             this.timer.step();
 
             fps = Math.round(10000 / this.timer.get('last')) / 10
