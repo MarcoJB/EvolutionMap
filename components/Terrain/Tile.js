@@ -1,10 +1,9 @@
-function Tile (x, y, height, waterLvl, waterDistance) {
-    var props = {
+function Tile (x, y, height, waterLvl) {
+    this.props = {
         x: x,
         y: y,
         height: height,
         waterLvl: waterLvl,
-        waterDistance: waterDistance,
         moisture: 0,
         moisture_old: 0,
         color: {},
@@ -14,108 +13,103 @@ function Tile (x, y, height, waterLvl, waterDistance) {
         temperature: 1
     };
 
-    reCalc();
 
+    this.reCalc = function() {
+        if (this.props.height > this.props.waterLvl) {
+            this.props.temperature = Math.exp((this.props.waterLvl - this.props.height) / 200);
 
-    function reCalc() {
-        if (height > waterLvl) {
-            props.temperature = Math.exp((waterLvl - height) / 200);
-
-            props.color.red = Math.round((240 - 120 * height / 255) * (1 - props.moisture));
-            props.color.green = Math.round((230 - 180 * height / 255) * (1 - props.moisture));
-            props.color.blue = Math.round((120 - 90 * height / 255) * (1 - props.moisture));
-        } else if (height > waterLvl - 20) {
-            props.color.red = Math.round(37 + (67 - 37) * (height - (waterLvl - 20)) / 20);
-            props.color.green = Math.round(84 + (190 - 143) * (height - (waterLvl - 20)) / 20);
-            props.color.blue = Math.round(132 + (165 - 132) * (height - (waterLvl - 20)) / 20);
+            this.props.color.red = Math.round((240 - 120 * this.props.height / 255) * (1 - this.props.moisture));
+            this.props.color.green = Math.round((230 - 180 * this.props.height / 255) * (1 - this.props.moisture));
+            this.props.color.blue = Math.round((120 - 90 * this.props.height / 255) * (1 - this.props.moisture));
+        } else if (this.props.height > this.props.waterLvl - 20) {
+            this.props.color.red = Math.round(37 + (67 - 37) * (this.props.height - (this.props.waterLvl - 20)) / 20);
+            this.props.color.green = Math.round(84 + (190 - 143) * (this.props.height - (this.props.waterLvl - 20)) / 20);
+            this.props.color.blue = Math.round(132 + (165 - 132) * (this.props.height - (this.props.waterLvl - 20)) / 20);
         } else {
-            props.color.red = 37;
-            props.color.green = 84;
-            props.color.blue = 132;
+            this.props.color.red = 37;
+            this.props.color.green = 84;
+            this.props.color.blue = 132;
         }
-    }
+    };
 
-    function countNeighbors() {
+    this.countNeighbors = function() {
         var neighborsNumber = 0;
 
         for (var y = 0; y < 3; y++) {
             for (var x = 0; x < 3; x++) {
-                if (props.neighbors[y][x] !== null) neighborsNumber++;
+                if (this.props.neighbors[y][x] !== null) neighborsNumber++;
             }
         }
 
         return neighborsNumber;
-    }
+    };
 
 
     this.get = function(prop) {
-        return props[prop];
+        return this.props[prop];
     };
 
     this.getRelevantMoisture = function() {
-        props.neighborsHandled++;
+        this.props.neighborsHandled++;
 
-        if (props.neighborsHandled > 0) {
-            return props.moisture;
+        if (this.props.neighborsHandled > 0) {
+            return this.props.moisture;
         } else {
-            return props.moisture_old;
+            return this.props.moisture_old;
         }
     };
 
     this.setWaterLvl = function(value) {
-        waterLvl = value;
-        reCalc();
-    };
-
-    this.setWaterDistance = function(value) {
-        waterDistance = value;
+        this.props.waterLvl = value;
     };
 
     this.setNeighbor = function(x, y, neighbor) {
-        props.neighbors[y][x] = neighbor;
-        props.neighborsNumber = countNeighbors();
+        this.props.neighbors[y][x] = neighbor;
+        this.props.neighborsNumber = this.countNeighbors();
     };
 
     this.step = function(time) {
-        props.moisture_old = props.moisture;
+        this.props.moisture_old = this.props.moisture;
 
         var diff = 0;
         var relevantMoisture;
 
         for (var y = 0; y < 3; y++) {
             for (var x = 0; x < 3; x++) {
-                if (props.neighbors[y][x] !== null) {
-                    relevantMoisture = props.neighbors[y][x].getRelevantMoisture();
+                if (this.props.neighbors[y][x] !== null) {
+                    relevantMoisture = this.props.neighbors[y][x].getRelevantMoisture();
 
-                    if (props.height > props.waterLvl) {
+                    if (this.props.height > this.props.waterLvl) {
                         diff += (Math.abs(x - 1) === Math.abs(y - 1) ? 0.7 : 1) *
-                            (relevantMoisture - props.moisture) *
-                            Math.exp(-Math.pow(props.neighbors[y][x].get('height') - props.height, 2) / 200) * 2;
+                            (relevantMoisture - this.props.moisture) *
+                            Math.exp(-Math.pow(this.props.neighbors[y][x].props.height - this.props.height, 2) / 200) * 2;
                     }
                 }
             }
         }
 
-        if (props.height <= props.waterLvl) {
-            props.moisture = 1;
+        if (this.props.height <= this.props.waterLvl) {
+            this.props.moisture = 1;
         } else {
-            props.moisture += time * diff / 10;
-            props.moisture *= 1 - time / 100 * props.temperature;
+            this.props.moisture += time * diff / 10;
+            this.props.moisture *= 1 - time / 100 * this.props.temperature;
         }
 
-        props.neighborsHandled -= props.neighborsNumber;
+        this.props.neighborsHandled -= this.props.neighborsNumber;
 
-        reCalc();
+        this.reCalc();
 
-        if (height > waterLvl) {
-            if (Math.random() < time * 0.000001 * props.moisture * props.temperature) {
-                Game.Vegetation.createPlant(props.x + 0.5, props.y + 0.5);
+        if (this.props.height > this.props.waterLvl) {
+            if (Math.random() < time * 0.000001 * this.props.moisture * this.props.temperature) {
+                Game.Vegetation.createPlant(this.props.x + 0.5, this.props.y + 0.5);
             }
         }
+
+        this.reCalc();
     };
 
 
-    function log(message) {
-        if (x === 20 && y === 0) console.log(message);
+    this.log = function(message) {
+        if (this.props.x === 20 && this.props.y === 0) console.log(message);
     }
 }

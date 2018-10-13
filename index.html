@@ -7,6 +7,7 @@
         </title>
         <link rel="stylesheet" type="text/css" href="index.css">
         <script type="text/javascript" src="../jquery.min.js"></script>
+        <script type="text/javascript" src="gpu.js"></script>
         <script type="text/javascript" src="components/Timer.js"></script>
         <script type="text/javascript" src="components/InteractionHandler.js"></script>
         <script type="text/javascript" src="components/Renderer.js"></script>
@@ -21,10 +22,11 @@
         <canvas id="terrain"></canvas>
     </div>
     <div id="settings">
-        Geschwindigkeit: <input type="range" id="game_speed" min="0" max="70" value="0">
-        <button id="start_time" class="start">Zeit starten</button>
-        <br>
-        <button id="start_vegetation" disabled>Vegetation starten</button>
+        <button id="start_time" class="start">Zeit starten</button><br>
+        <button id="start_vegetation" disabled>Vegetation starten</button><br><br>
+        <input type="checkbox" id="render_active" checked> rendern<br><br>
+        Geschwindigkeit:<br>
+        <input type="range" id="game_speed" min="0" max="70" value="0"><br><br><br>
         <div id="fps"></div>
     </div>
     </body>

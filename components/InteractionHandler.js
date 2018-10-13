@@ -1,5 +1,5 @@
 function InteractionHandler(ctx) {
-    var props = {
+    this.props = {
         zoomLvl: 0,
         scaleFactor: 1,
         initialScaleFactor: ctx.canvas.height / 256,
@@ -12,8 +12,10 @@ function InteractionHandler(ctx) {
     };
 
 
+    var that = this;
+
     $('#terrain').on('wheel', function (e) {
-        zoom(
+        that.zoom(
             Math.sign(e.originalEvent.deltaY),
             e.originalEvent.layerX,
             e.originalEvent.layerY
@@ -21,79 +23,79 @@ function InteractionHandler(ctx) {
     });
 
     $('#map').on('mousedown', function (e) {
-        onInteractionStart(e);
+        that.onInteractionStart(e);
     });
     $(window).on('mouseup', function (e) {
-        onInteractionEnd(e);
+        that.onInteractionEnd(e);
     }).on('mousemove', function (e) {
-        onInteractionMove(e);
+        that.onInteractionMove(e);
     });
 
 
-    function zoom(direction, x, y) {
+    this.zoom = function(direction, x, y) {
         var tile;
 
         tile = {
-            before: pxToTile(x, y)
+            before: this.pxToTile(x, y)
         };
 
-        props.zoomLvl -= direction * 0.2;
-        if (props.zoomLvl < 0) props.zoomLvl = 0;
-        props.scaleFactor = Math.pow(2, props.zoomLvl);
+        this.props.zoomLvl -= direction * 0.2;
+        if (this.props.zoomLvl < 0) this.props.zoomLvl = 0;
+        this.props.scaleFactor = Math.pow(2, this.props.zoomLvl);
 
-        tile.after = pxToTile(x, y);
+        tile.after = this.pxToTile(x, y);
 
-        props.origin.x += tile.before.x - tile.after.x;
-        props.origin.y += tile.before.y - tile.after.y;
-        props.origin.x = Helper.clamp(props.origin.x, 0, 256 * (1 - 1 / props.scaleFactor));
-        props.origin.y = Helper.clamp(props.origin.y, 0, 256 * (1 - 1 / props.scaleFactor));
+        this.props.origin.x += tile.before.x - tile.after.x;
+        this.props.origin.y += tile.before.y - tile.after.y;
+        this.props.origin.x = Helper.clamp(this.props.origin.x, 0, 256 * (1 - 1 / this.props.scaleFactor));
+        this.props.origin.y = Helper.clamp(this.props.origin.y, 0, 256 * (1 - 1 / this.props.scaleFactor));
 
         Game.render();
-    }
+    };
 
-    function onInteractionStart(e) {
-        props.dragging = true;
+    this.onInteractionStart = function(e) {
+        this.props.dragging = true;
 
-        props.startPos.x = e.screenX;
-        props.startPos.y = e.screenY;
+        this.props.startPos.x = e.screenX;
+        this.props.startPos.y = e.screenY;
 
         $('html').addClass('grabbing');
-    }
+    };
 
-    function onInteractionEnd() {
-        props.dragging = false;
+    this.onInteractionEnd = function() {
+        this.props.dragging = false;
         $('html').removeClass('grabbing');
-    }
+    };
 
-    function onInteractionMove(e) {
-        if (props.dragging) {
-            props.origin.x -= 2 * (e.screenX - props.startPos.x) / (props.scaleFactor * props.initialScaleFactor) * ctx.canvas.width / $(ctx.canvas).width();
-            props.origin.y -= 2 * (e.screenY - props.startPos.y) / (props.scaleFactor * props.initialScaleFactor) * ctx.canvas.height / $(ctx.canvas).height();
-            props.origin.x = Helper.clamp(props.origin.x, 0, 256 * (1 - 1 / props.scaleFactor));
-            props.origin.y = Helper.clamp(props.origin.y, 0, 256 * (1 - 1 / props.scaleFactor));
+    this.onInteractionMove = function(e) {
+        if (this.props.dragging) {
+            this.props.origin.x -= 2 * (e.screenX - this.props.startPos.x) / (this.props.scaleFactor * this.props.initialScaleFactor) * ctx.canvas.width / $(ctx.canvas).width();
+            this.props.origin.y -= 2 * (e.screenY - this.props.startPos.y) / (this.props.scaleFactor * this.props.initialScaleFactor) * ctx.canvas.height / $(ctx.canvas).height();
+            this.props.origin.x = Helper.clamp(this.props.origin.x, 0, 256 * (1 - 1 / this.props.scaleFactor));
+            this.props.origin.y = Helper.clamp(this.props.origin.y, 0, 256 * (1 - 1 / this.props.scaleFactor));
 
-            props.startPos.x = e.screenX;
-            props.startPos.y = e.screenY;
+            this.props.startPos.x = e.screenX;
+            this.props.startPos.y = e.screenY;
 
             Game.render();
         }
-    }
+    };
 
-    function pxToTile(cursor_x, cursor_y) {
+    this.pxToTile = function(cursor_x, cursor_y) {
         var visibleTiles, tile;
 
-        visibleTiles = 256 / props.scaleFactor;
+        visibleTiles = 256 / this.props.scaleFactor;
 
         tile = {
-            x: props.origin.x + cursor_x / $(ctx.canvas).width() * visibleTiles,
-            y: props.origin.y + cursor_y / $(ctx.canvas).height() * visibleTiles
+            x: this.props.origin.x + cursor_x / $(ctx.canvas).width() * visibleTiles,
+            y: this.props.origin.y + cursor_y / $(ctx.canvas).height() * visibleTiles
         };
 
         return tile;
-    }
+    };
 
 
     this.get = function (prop) {
-        return props[prop];
+        return this.props[prop];
     }
 }

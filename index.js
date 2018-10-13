@@ -42,6 +42,10 @@ var Game = {
         $('#game_speed').on('input', function(e) {
             that.speed = Math.pow(2, e.target.value / 10);
         });
+
+        $('#render_active').on('change', function(e) {
+            that.renderActive = e.target.checked;
+        });
     },
     step: function (time) {
         this.Terrain.step(time);
@@ -49,8 +53,8 @@ var Game = {
         if (this.renderActive) this.render();
     },
     render: function () {
-        this.Renderer.renderTerrain(this.Terrain.get('tiles'), this.InteractionHandler.get('origin'), this.InteractionHandler.get('zoomLvl'));
-        if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.get('plants').unsorted);
+        this.Renderer.renderTerrain(this.Terrain.props.tiles, this.InteractionHandler.props.origin, this.InteractionHandler.props.zoomLvl);
+        if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.props.plants.unsorted);
     },
     stopped: false,
     timer: null,
