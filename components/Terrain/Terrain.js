@@ -6,10 +6,14 @@ function Terrain(ctx, terrain_name) {
         tileSize: 20,
         data: null,
         waterLvl: 60,
-        tiles: [],
         worker: null,
-        dataArray: null
+        tileMoistures: [],
+        tileMoisturesTexture: null,
+        tileHeights: []
     };
+
+
+    this.stepMoisture = null;
 
 
     this.smoothTerrain = function(data) {
@@ -40,7 +44,7 @@ function Terrain(ctx, terrain_name) {
 
     this.loadData = function(terrain_name, callback) {
         $.get('terrain/' + terrain_name + '.json', function (data) {
-            that.props.data = that.smoothTerrain(data);
+            that.props.tileHeights = that.smoothTerrain(data);
             callback();
         }, 'json');
     };
@@ -49,42 +53,52 @@ function Terrain(ctx, terrain_name) {
         var tile;
         this.props.tiles = [];
 
-        for (var y = 0; y < this.props.data.length; y++) {
-            this.props.tiles[y] = [];
+        for (var y = 0; y < this.props.tileHeights.length; y++) {
+            this.props.tileMoistures[y] = [];
 
-            for (var x = 0; x < this.props.data[y].length; x++) {
-                tile = new Tile(x, y, this.props.data[y][x], this.props.waterLvl);
-
-                if (x > 0) {
-                    tile.setNeighbor(0, 1, this.props.tiles[y][x - 1]);
-                    this.props.tiles[y][x - 1].setNeighbor(2, 1, tile);
-                }
-                if (y > 0) {
-                    tile.setNeighbor(1, 0, this.props.tiles[y - 1][x]);
-                    this.props.tiles[y - 1][x].setNeighbor(1, 2, tile);
-                }
-                if (x > 0 && y > 0) {
-                    tile.setNeighbor(0, 0, this.props.tiles[y - 1][x - 1]);
-                    this.props.tiles[y - 1][x - 1].setNeighbor(2, 2, tile);
-                }
-                if (y > 0 && x < 255) {
-                    tile.setNeighbor(2, 0, this.props.tiles[y - 1][x + 1]);
-                    this.props.tiles[y - 1][x + 1].setNeighbor(0, 2, tile);
-                }
-
-                this.props.tiles[y][x] = tile;
+            for (var x = 0; x < this.props.tileHeights[y].length; x++) {
+                this.props.tileMoistures[y][x] = 0;
             }
         }
+
+        this.stepMoisture = Game.gpu.createKernel(function(time, moistures, heights) {
+            var diff = 0;
+
+            if (heights[this.thread.y][this.thread.x] <= this.constants.waterLvl) return 1;
+
+            for (var y_rel = -1; y_rel <= 1; y_rel++) {
+                if (this.thread.y + y_rel >= 0 && this.thread.y + y_rel < 256) {
+                    for (var x_rel = -1; x_rel <= 1; x_rel++) {
+                        if (this.thread.x + x_rel >= 0 && this.thread.x + x_rel < 256 && (x_rel !== 0 || x_rel !== 0)) {
+                            diff += (moistures[this.thread.y + y_rel][this.thread.x + x_rel] - moistures[this.thread.y][this.thread.x]) *
+                                Math.exp(-Math.pow(heights[this.thread.y + y_rel][this.thread.x + x_rel] - heights[this.thread.y][this.thread.x], 2) / 200) * 2;
+                        }
+                    }
+                }
+            }
+
+            return moistures[this.thread.y][this.thread.x] + time * diff / 10;
+        }, {
+            constants: {
+                waterLvl: this.props.waterLvl
+            },
+            output: [256, 256]
+        });
+
+        this.props.tileMoistures = this.stepMoisture(0.1, this.props.tileMoistures, this.props.tileHeights);
     };
 
 
+
     this.step = function (time) {
-        for (var y = 0; y < this.props.tiles.length; y++) {
+        this.props.tileMoistures = this.stepMoisture(time, this.props.tileMoistures, this.props.tileHeights);
+
+       /* for (var y = 0; y < this.props.tiles.length; y++) {
             for (var x = 0; x < this.props.tiles[y].length; x++) {
                 this.props.tiles[y][x].setWaterLvl(this.props.waterLvl);
                 this.props.tiles[y][x].step(time);
             }
-        }
+        }*/
     };
 
     this.get = function (prop) {

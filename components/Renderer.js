@@ -7,7 +7,7 @@ function Renderer(ctx) {
     };
 
 
-    this.renderTerrain = function (tiles, origin, zoomLvl) {
+    this.renderTerrain = function (tileHeights, tileMoistures, waterLvl, origin, zoomLvl) {
         var x, y, tile_x, tile_y, color;
 
         this.props.origin.x = origin.x;
@@ -43,7 +43,24 @@ function Renderer(ctx) {
                 tile_y = Math.floor(this.props.origin.y) + y;
                 tile_x = Math.floor(this.props.origin.x) + x;
 
-                color = tiles[tile_y][tile_x].props.color;
+                var temperature;
+                var color = {};
+
+                if (tileHeights[tile_y][tile_x] > waterLvl) {
+                    temperature = Math.exp((waterLvl - tileHeights[tile_y][tile_x]) / 200);
+
+                    color.red = Math.round((240 - 120 * tileHeights[tile_y][tile_x] / 255) * (1 - tileMoistures[tile_y][tile_x]));
+                    color.green = Math.round((230 - 180 * tileHeights[tile_y][tile_x] / 255) * (1 - tileMoistures[tile_y][tile_x]));
+                    color.blue = Math.round((120 - 90 * tileHeights[tile_y][tile_x] / 255) * (1 - tileMoistures[tile_y][tile_x]));
+                } else if (tileHeights[tile_y][tile_x] > waterLvl - 20) {
+                    color.red = Math.round(37 + (67 - 37) * (tileHeights[tile_y][tile_x] - (waterLvl - 20)) / 20);
+                    color.green = Math.round(84 + (190 - 143) * (tileHeights[tile_y][tile_x] - (waterLvl - 20)) / 20);
+                    color.blue = Math.round(132 + (165 - 132) * (tileHeights[tile_y][tile_x] - (waterLvl - 20)) / 20);
+                } else {
+                    color.red = 37;
+                    color.green = 84;
+                    color.blue = 132;
+                }
 
                 dataArrayTemp.set(
                     [color.red, color.green, color.blue, 255],

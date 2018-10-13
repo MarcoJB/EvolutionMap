@@ -5,8 +5,11 @@ var Game = {
     vegetationStarted: false,
     renderActive: true,
     speed: 1,
+    gpu: null,
     init: function (terrain_name) {
         var that = this;
+
+        this.gpu = new GPU();
 
         this.ctx = $('#terrain')[0].getContext('2d');
         $(this.ctx.canvas).attr('width', $(this.ctx.canvas).height()).attr('height', $(this.ctx.canvas).height());
@@ -55,7 +58,7 @@ var Game = {
         if (this.renderActive) this.render();
     },
     render: function () {
-        this.Renderer.renderTerrain(this.Terrain.props.tiles, this.InteractionHandler.props.origin, this.InteractionHandler.props.zoomLvl);
+        this.Renderer.renderTerrain(this.Terrain.props.tileHeights, this.Terrain.props.tileMoistures, this.Terrain.props.waterLvl, this.InteractionHandler.props.origin, this.InteractionHandler.props.zoomLvl);
         if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.props.plants.unsorted);
     },
     stopped: false,
