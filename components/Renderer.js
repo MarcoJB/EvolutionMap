@@ -84,7 +84,7 @@ function Renderer(ctx) {
                 relativPosition.y > -plant.props.size / 2 &&
                 relativPosition.x < 256 / this.props.scaleFactor + plant.props.size / 2 &&
                 relativPosition.y < 256 / this.props.scaleFactor + plant.props.size / 2) {
-                ctx.beginPath();
+                /*ctx.beginPath();
                 ctx.arc(
                     relativPosition.x * this.props.initialScaleFactor * this.props.scaleFactor,
                     relativPosition.y * this.props.initialScaleFactor * this.props.scaleFactor,
@@ -92,7 +92,13 @@ function Renderer(ctx) {
                     0,
                     2 * Math.PI
                 );
-                ctx.fill();
+                ctx.fill();*/
+                ctx.fillRect(
+                    relativPosition.x * this.props.initialScaleFactor * this.props.scaleFactor - plant.props.size / 2 * this.props.initialScaleFactor * this.props.scaleFactor,
+                    relativPosition.y * this.props.initialScaleFactor * this.props.scaleFactor - plant.props.size / 2 * this.props.initialScaleFactor * this.props.scaleFactor,
+                    plant.props.size * this.props.initialScaleFactor * this.props.scaleFactor,
+                    plant.props.size * this.props.initialScaleFactor * this.props.scaleFactor
+                );
             }
         }
     };

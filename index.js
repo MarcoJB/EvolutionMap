@@ -1,3 +1,5 @@
+var fps_cache = [];
+
 var Game = {
     ctx: null,
     vegetationStarted: false,
@@ -70,11 +72,15 @@ var Game = {
     },
     run: function (time) {
         var that = this;
+        var fps;
 
         if (!this.stopped) {
             this.step(Math.min(1, time * this.speed));
             this.timer.step();
-            $('#fps').text(Math.round(10000 / this.timer.get('last')) / 10 + ' fps');
+
+            fps = Math.round(10000 / this.timer.get('last')) / 10
+            $('#fps').text(fps + ' fps');
+            fps_cache.push([Game.Vegetation.props.plants.unsorted.length, fps]);
 
             setTimeout(function () {
                 that.run(that.timer.get('last') / 1000);

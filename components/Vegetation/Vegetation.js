@@ -91,7 +91,4 @@ function Vegetation(ctx) {
             this.props.plants.unsorted[plant].step(time);
         }
     };
-
-        return plantDensity;
-    }
 }
