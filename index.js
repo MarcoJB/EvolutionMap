@@ -57,8 +57,13 @@ var Game = {
         if (this.renderActive) this.render();
     },
     render: function () {
-        this.Renderer.renderTerrain(this.Terrain.props.tileHeightsTexture, this.Terrain.props.tileMoisturesTexture, this.Terrain.props.waterLvl, this.InteractionHandler.props.origin, this.InteractionHandler.props.zoomLvl);
-        if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.props.plantsArray);
+        this.Renderer.renderTerrain(
+            this.Terrain.props.tileHeightsTexture,
+            this.Terrain.props.tileMoisturesTexture,
+            this.Terrain.props.waterLvl,
+            this.InteractionHandler.props.origin,
+            this.InteractionHandler.props.zoomLvl);
+        if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.props.plants);
     },
     stopped: false,
     timer: null,
@@ -81,6 +86,7 @@ var Game = {
             this.time += Math.min(0.5, time * this.speed);
 
             this.timer.step();
+            $('#fps').text(Math.round(50000 / (this.timer.get(-1) + this.timer.get(-2) + this.timer.get(-3) + this.timer.get(-4) + this.timer.get(-5))) / 10 + ' fps');
 
             fps = Math.round(10000 / this.timer.get('last')) / 10
             $('#fps').text(fps + ' fps');
