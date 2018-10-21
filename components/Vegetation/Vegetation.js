@@ -1,31 +1,33 @@
-function Vegetation(ctx) {
+function Vegetation() {
+    var x, y;
+
     this.props = {
         plants: {
             byTile: [],
             unsorted: []
         },
-        plantDensity: []/*,
+        plantDensity: [],
         plantDensityArray: [],
-        plantsArray: []*/
+        plantsArray: []
     };
 
 
-    for (var y = 0; y < 256; y++) {
+    for (y = 0; y < 256; y++) {
         this.props.plants.byTile[y] = [];
         this.props.plantDensity[y] = [];
 
-        for (var x = 0; x < 256; x++) {
+        for (x = 0; x < 256; x++) {
             this.props.plants.byTile[y][x] = [];
             this.props.plantDensity[y][x] = 0;
         }
     }
 
 
-    /*for (var y = 0; y < 512; y++) {
+    for (y = 0; y < 256; y++) {
         this.props.plantDensityArray[y] = [];
         this.props.plantsArray[y] = [];
 
-        for (var x = 0; x < 512; x++) {
+        for (x = 0; x < 256; x++) {
             this.props.plantDensityArray[y][x] = [0, 0];
             this.props.plantsArray[y][x] = [0, 0, 0, 0, 0];
         }
@@ -33,15 +35,43 @@ function Vegetation(ctx) {
 
 
     this.kernelFunctions = {
-        calcPlantPropability: function(time, heights, moistures, plantDensity) {
-            if (heights[this.thread.y][this.thread.x] <= this.constants.waterLvl) return 0;
+        calcPlantPropability: function(time, gameTime, heights, moistures, plants) {
+            if (heights[this.thread.y][this.thread.x] <= this.constants.waterLvl || plants[this.thread.y][this.thread.x][4] !== 0) return 0;
+
+            var wideDensity = 0;
+            var localDensity = 0;
 
             var temperature = Math.exp((this.constants.waterLvl - heights[this.thread.y][this.thread.x]) / 200);
 
-            return (1 - Math.exp(Math.log(48 / 49) * plantDensity[this.thread.y][this.thread.x][1]))
+            for (var y_rel = -3; y_rel <= 3; y_rel++) {
+                if (this.thread.y + y_rel >= 0 && this.thread.y + y_rel < 256) {
+                    for (var x_rel = -3; x_rel <= 3; x_rel++) {
+                        if (this.thread.x + x_rel >= 0 && this.thread.x + x_rel < 256 && plants[this.thread.y + y_rel][this.thread.x + x_rel][4] !== 0) {
+                            var energy = plants[this.thread.y + y_rel][this.thread.x + x_rel][4] * Math.exp(Math.log(2) * Math.sin(Math.exp(Math.log(2) * (gameTime - plants[this.thread.y + y_rel][this.thread.x + x_rel][2]) / plants[this.thread.y + y_rel][this.thread.x + x_rel][3]) * 3.14159));
+                            wideDensity += energy * 10;
+                        }
+                    }
+                }
+            }
+
+            for (var y_rel = -1; y_rel <= 1; y_rel++) {
+                if (this.thread.y + y_rel >= 0 && this.thread.y + y_rel < 256) {
+                    for (var x_rel = -1; x_rel <= 1; x_rel++) {
+                        if (this.thread.x + x_rel >= 0 && this.thread.x + x_rel < 256 && plants[this.thread.y + y_rel][this.thread.x + x_rel][4] !== 0) {
+                            var energy = plants[this.thread.y + y_rel][this.thread.x + x_rel][4] * Math.exp(Math.log(2) * Math.sin(Math.exp(Math.log(2) * (gameTime - plants[this.thread.y + y_rel][this.thread.x + x_rel][2]) / plants[this.thread.y + y_rel][this.thread.x + x_rel][3]) * 3.14159));
+                            localDensity += energy * 10;
+                        }
+                    }
+                }
+            }
+
+            var propability = (1 - Math.exp(Math.log(48 / 49) * wideDensity))
+                * moistures[this.thread.y][this.thread.x]
                 * moistures[this.thread.y][this.thread.x]
                 * temperature
-                / plantDensity[this.thread.y][this.thread.x][0];
+                / (localDensity + 1);
+
+            return (1 - Math.exp(Math.log(1 - propability) * time));
         }
     };
 
@@ -52,7 +82,7 @@ function Vegetation(ctx) {
                 waterLvl: Game.Terrain.props.waterLvl
             }
         })
-    };*/
+    };
 
 
     this.createPlant = function (x, y) {
@@ -123,8 +153,40 @@ function Vegetation(ctx) {
     };
 
     this.step = function (time) {
-        for (var plant = 0; plant < this.props.plants.unsorted.length; plant++) {
-            this.props.plants.unsorted[plant].step(time);
+        var plantPropability = this.kernels.calcPlantPropability(
+            time,
+            Game.time,
+            Game.Terrain.props.tileHeightsTexture,
+            Game.Terrain.props.tileMoisturesTexture,
+            this.props.plantsArray
+        );
+
+        for (var y = 0; y < 256; y++) {
+            for (var x = 0; x < 256; x++) {
+                if (this.props.plantsArray[y][x][4] !== 0 && Game.time - this.props.plantsArray[y][x][2] > this.props.plantsArray[y][x][3]) {
+                    this.props.plantsArray[y][x] = [0, 0, 0, 0, 0];
+                } else if (plantPropability[y][x] > 0.001 && plantPropability[y][x] > Math.random()) {
+                    this.props.plantsArray[y][x] = [Math.random(), Math.random(), Game.time, 15, 0.1];
+                }
+            }
+        }
+    };
+
+    this.testPlant = function() {
+        var x, y;
+
+        this.props.plantsArray[0][55] = [0.5, 0.5, Game.time, 15, 0.1];
+
+        for (y = 0; y <= 3; y++) {
+            for (x = 52; x <= 58; x++) {
+                this.props.plantDensityArray[y][x][1]++;
+            }
+        }
+
+        for (y = 0; y <= 1; y++) {
+            for (x = 54; x <= 56; x++) {
+                this.props.plantDensityArray[y][x][0]++;
+            }
         }
     };
 }

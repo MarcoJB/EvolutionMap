@@ -4,6 +4,7 @@ var Game = {
     renderActive: true,
     speed: 1,
     gpu: null,
+    time: 0,
     init: function (terrain_name) {
         var that = this;
 
@@ -57,7 +58,7 @@ var Game = {
     },
     render: function () {
         this.Renderer.renderTerrain(this.Terrain.props.tileHeightsTexture, this.Terrain.props.tileMoisturesTexture, this.Terrain.props.waterLvl, this.InteractionHandler.props.origin, this.InteractionHandler.props.zoomLvl);
-        if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.props.plants.unsorted);
+        if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.props.plantsArray);
     },
     stopped: false,
     timer: null,
@@ -77,6 +78,8 @@ var Game = {
 
         if (!this.stopped) {
             this.step(Math.min(0.5, time * this.speed));
+            this.time += Math.min(0.5, time * this.speed);
+
             this.timer.step();
 
             fps = Math.round(10000 / this.timer.get('last')) / 10
