@@ -7,9 +7,38 @@ function Renderer(ctx) {
     };
 
 
-    this.renderTerrain = function (tileHeights, tileMoistures, waterLvl, origin, zoomLvl) {
-        var x, y, tile_x, tile_y, color;
+    this.kernelFunctions = {
+        renderTerrain: function (heights, moistures, waterLvl, origin) {
+            var red, green, blue;
 
+            if (heights[this.thread.y][this.thread.x] > waterLvl) {
+                red = ((240 - 120 * heights[this.thread.y][this.thread.x] / 255) * (1 - moistures[this.thread.y][this.thread.x]));
+                green = ((230 - 180 * heights[this.thread.y][this.thread.x] / 255) * (1 - moistures[this.thread.y][this.thread.x]));
+                blue = ((120 - 90 * heights[this.thread.y][this.thread.x] / 255) * (1 - moistures[this.thread.y][this.thread.x]));
+            } else if (heights[this.thread.y][this.thread.x] > waterLvl - 20) {
+                red = (37 + (67 - 37) * (heights[this.thread.y][this.thread.x] - (waterLvl - 20)) / 20);
+                green = (84 + (190 - 143) * (heights[this.thread.y][this.thread.x] - (waterLvl - 20)) / 20);
+                blue = (132 + (165 - 132) * (heights[this.thread.y][this.thread.x] - (waterLvl - 20)) / 20);
+            } else {
+                red = 37;
+                green = 84;
+                blue = 132;
+            }
+
+            this.color(red/255, green/255, blue/255);
+        }
+    };
+
+    this.kernels = {
+        renderTerrain: Game.gpu.createKernel(this.kernelFunctions.renderTerrain, {
+            outputToTexture: true,
+            output: [256, 256],
+            graphical: true
+        })
+    };
+
+
+    this.renderTerrain = function (tileHeights, tileMoistures, waterLvl, origin, zoomLvl) {
         this.props.origin.x = origin.x;
         this.props.origin.y = origin.y;
 
@@ -18,19 +47,7 @@ function Renderer(ctx) {
         this.props.origin.x = Helper.clamp(this.props.origin.x, 0, 256 * (1 - 1 / this.props.scaleFactor));
         this.props.origin.y = Helper.clamp(this.props.origin.y, 0, 256 * (1 - 1 / this.props.scaleFactor));
 
-        /*for (y = 0; y < ctx.canvas.height; y++) {
-            for (x = 0; x < ctx.canvas.width; x++) {
-                tile_y = Math.floor(y / (this.props.scaleFactor * this.props.initialScaleFactor) + this.props.origin.y);
-                tile_x = Math.floor(x / (this.props.scaleFactor * this.props.initialScaleFactor) + this.props.origin.x);
-
-                color = tiles[tile_y][tile_x].get('color');
-
-                this.props.dataArray.set(
-                    [color.red, color.green, color.blue, 255],
-                    y * ctx.canvas.width * 4 + x * 4
-                );
-            }
-        }*/
+        /*var x, y, tile_x, tile_y, color;
 
         var canvasTemp = document.createElement('canvas');
         canvasTemp.width = Math.min(Math.ceil(256 / this.props.scaleFactor) + 1, 256 - Math.floor(this.props.origin.x));
@@ -70,8 +87,24 @@ function Renderer(ctx) {
         }
 
         ctxTemp.putImageData(new ImageData(dataArrayTemp, canvasTemp.width, canvasTemp.height), 0, 0);
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);*/
+
+        this.kernels.renderTerrain(tileHeights, tileMoistures, waterLvl, [origin.x, origin.y]);
+        var canvasTemp = this.kernels.renderTerrain.getCanvas();
+
         ctx.drawImage(
+            canvasTemp,
+            0,
+            0,
+            canvasTemp.width,
+            canvasTemp.height,
+            -this.props.origin.x * this.props.scaleFactor * this.props.initialScaleFactor,
+            -this.props.origin.y * this.props.scaleFactor * this.props.initialScaleFactor,
+            canvasTemp.width * this.props.scaleFactor * this.props.initialScaleFactor,
+            canvasTemp.height * this.props.scaleFactor * this.props.initialScaleFactor
+        );
+
+        /*ctx.drawImage(
             canvasTemp,
             0,
             0,
@@ -81,7 +114,7 @@ function Renderer(ctx) {
             -this.props.origin.y % 1 * this.props.scaleFactor * this.props.initialScaleFactor,
             canvasTemp.width * this.props.scaleFactor * this.props.initialScaleFactor,
             canvasTemp.height * this.props.scaleFactor * this.props.initialScaleFactor
-        );
+        );*/
     };
 
     this.renderVegetation = function (plants) {

@@ -1,5 +1,3 @@
-var fps_cache = [];
-
 var Game = {
     ctx: null,
     vegetationStarted: false,
@@ -58,7 +56,7 @@ var Game = {
         if (this.renderActive) this.render();
     },
     render: function () {
-        this.Renderer.renderTerrain(this.Terrain.props.tileHeights, this.Terrain.props.tileMoistures, this.Terrain.props.waterLvl, this.InteractionHandler.props.origin, this.InteractionHandler.props.zoomLvl);
+        this.Renderer.renderTerrain(this.Terrain.props.tileHeightsTexture, this.Terrain.props.tileMoisturesTexture, this.Terrain.props.waterLvl, this.InteractionHandler.props.origin, this.InteractionHandler.props.zoomLvl);
         if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.props.plants.unsorted);
     },
     stopped: false,

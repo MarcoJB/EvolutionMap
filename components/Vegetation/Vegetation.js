@@ -4,7 +4,9 @@ function Vegetation(ctx) {
             byTile: [],
             unsorted: []
         },
-        plantDensity: []
+        plantDensity: []/*,
+        plantDensityArray: [],
+        plantsArray: []*/
     };
 
 
@@ -17,6 +19,40 @@ function Vegetation(ctx) {
             this.props.plantDensity[y][x] = 0;
         }
     }
+
+
+    /*for (var y = 0; y < 512; y++) {
+        this.props.plantDensityArray[y] = [];
+        this.props.plantsArray[y] = [];
+
+        for (var x = 0; x < 512; x++) {
+            this.props.plantDensityArray[y][x] = [0, 0];
+            this.props.plantsArray[y][x] = [0, 0, 0, 0, 0];
+        }
+    }
+
+
+    this.kernelFunctions = {
+        calcPlantPropability: function(time, heights, moistures, plantDensity) {
+            if (heights[this.thread.y][this.thread.x] <= this.constants.waterLvl) return 0;
+
+            var temperature = Math.exp((this.constants.waterLvl - heights[this.thread.y][this.thread.x]) / 200);
+
+            return (1 - Math.exp(Math.log(48 / 49) * plantDensity[this.thread.y][this.thread.x][1]))
+                * moistures[this.thread.y][this.thread.x]
+                * temperature
+                / plantDensity[this.thread.y][this.thread.x][0];
+        }
+    };
+
+    this.kernels = {
+        calcPlantPropability: Game.gpu.createKernel(this.kernelFunctions.calcPlantPropability, {
+            output: [256, 256],
+            constants: {
+                waterLvl: Game.Terrain.props.waterLvl
+            }
+        })
+    };*/
 
 
     this.createPlant = function (x, y) {
