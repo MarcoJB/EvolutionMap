@@ -26,8 +26,12 @@ function Timer() {
                 times.push(moments[i + 1] - moments[i]);
             }
             return times;
-        } else if (typeof what === 'number' && what < moments.length - 1) {
-            return moments[what + 1] - moments[what];
+        } else if (typeof what === 'number' && what < moments.length - 1 && what > -moments.length) {
+            if (what >= 0) {
+                return moments[what + 1] - moments[what];
+            } else {
+                return moments[moments.length + what] - moments[moments.length + what - 1];
+            }
         }
     };
 

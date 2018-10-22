@@ -1,12 +1,14 @@
-var fps_cache = [];
-
 var Game = {
     ctx: null,
     vegetationStarted: false,
     renderActive: true,
     speed: 1,
+    gpu: null,
+    time: 0,
     init: function (terrain_name) {
         var that = this;
+
+        this.gpu = new GPU();
 
         this.ctx = $('#terrain')[0].getContext('2d');
         $(this.ctx.canvas).attr('width', $(this.ctx.canvas).height()).attr('height', $(this.ctx.canvas).height());
@@ -38,7 +40,7 @@ var Game = {
 
         $('#start_vegetation').on('click', function () {
             that.start('vegetation');
-            $(this).addClass('started').prop('disabled', true);
+            $(this).addClass('started');
         });
 
         $('#game_speed').on('input', function(e) {
@@ -55,8 +57,13 @@ var Game = {
         if (this.renderActive) this.render();
     },
     render: function () {
-        this.Renderer.renderTerrain(this.Terrain.props.tiles, this.InteractionHandler.props.origin, this.InteractionHandler.props.zoomLvl);
-        if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.props.plants.unsorted);
+        this.Renderer.renderTerrain(
+            this.Terrain.props.tileHeightsTexture,
+            this.Terrain.props.tileMoisturesTexture,
+            this.Terrain.props.waterLvl,
+            this.InteractionHandler.props.origin,
+            this.InteractionHandler.props.zoomLvl);
+        if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.props.plants);
     },
     stopped: false,
     timer: null,
@@ -68,6 +75,8 @@ var Game = {
             this.run(0.01);
         } else if (what === 'vegetation') {
             this.vegetationStarted = true;
+            this.Vegetation.initializePlants();
+
         }
     },
     run: function (time) {
@@ -75,8 +84,11 @@ var Game = {
         var fps;
 
         if (!this.stopped) {
-            this.step(Math.min(1, time * this.speed));
+            this.step(Math.min(0.5, time * this.speed));
+            this.time += Math.min(0.5, time * this.speed);
+
             this.timer.step();
+            $('#fps').text(Math.round(50000 / (this.timer.get(-1) + this.timer.get(-2) + this.timer.get(-3) + this.timer.get(-4) + this.timer.get(-5))) / 10 + ' fps');
 
             fps = Math.round(10000 / this.timer.get('last')) / 10
             $('#fps').text(fps + ' fps');
