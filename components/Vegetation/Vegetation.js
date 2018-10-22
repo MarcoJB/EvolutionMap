@@ -30,7 +30,7 @@ function Vegetation() {
                     for (var x_rel = -3; x_rel <= 3; x_rel++) {
                         if (this.thread.x + x_rel >= 0 && this.thread.x + x_rel < 256 && plants[this.thread.y + y_rel][this.thread.x + x_rel][4] !== 0) {
                             var energy = plants[this.thread.y + y_rel][this.thread.x + x_rel][4] * Math.exp(Math.log(2) * Math.sin(Math.exp(Math.log(2) * (gameTime - plants[this.thread.y + y_rel][this.thread.x + x_rel][2]) / plants[this.thread.y + y_rel][this.thread.x + x_rel][3]) * 3.14159));
-                            wideDensity += energy * 10;
+                            wideDensity += energy * 2;
                         }
                     }
                 }
@@ -40,8 +40,7 @@ function Vegetation() {
                 if (this.thread.y + y_rel >= 0 && this.thread.y + y_rel < 256) {
                     for (var x_rel = -1; x_rel <= 1; x_rel++) {
                         if (this.thread.x + x_rel >= 0 && this.thread.x + x_rel < 256 && plants[this.thread.y + y_rel][this.thread.x + x_rel][4] !== 0) {
-                            var energy = plants[this.thread.y + y_rel][this.thread.x + x_rel][4] * Math.exp(Math.log(2) * Math.sin(Math.exp(Math.log(2) * (gameTime - plants[this.thread.y + y_rel][this.thread.x + x_rel][2]) / plants[this.thread.y + y_rel][this.thread.x + x_rel][3]) * 3.14159));
-                            localDensity += energy * 10;
+                            localDensity += 1;
                         }
                     }
                 }
@@ -49,18 +48,17 @@ function Vegetation() {
 
             var propability = (1 - Math.exp(Math.log(48 / 49) * wideDensity))
                 * moistures[this.thread.y][this.thread.x]
-                * moistures[this.thread.y][this.thread.x]
                 * temperature
                 / (localDensity + 1);
 
             return (1 - Math.exp(Math.log(1 - propability) * time));
         },
-        calcStartSeedPropability: function(time, x, y, heights, moistures) {
+        calcStartSeedPropability: function(x, y, heights, moistures) {
             if (heights[y][x] <= this.constants.waterLvl) return 0;
 
             var temperature = Math.exp((this.constants.waterLvl - heights[y][x]) / 200);
 
-            return time * moistures[y][x] * temperature;
+            return moistures[y][x] * temperature;
         },
         getTextureValue: function(texture, x, y) {
             return texture[y][x];
@@ -103,21 +101,25 @@ function Vegetation() {
         this.props.plants[y][x] = [0, 0, 0, 0, 0];
     };
 
-    this.seedStartPlant = function(time) {
+    this.seedStartPlant = function() {
         var x = Helper.random(0, 255, true);
         var y = Helper.random(0, 255, true);
 
-        var propability = this.kernels.calcStartSeedPropability(time, x, y, Game.Terrain.props.tileHeightsTexture, Game.Terrain.props.tileMoisturesTexture);
+        var propability = this.kernels.calcStartSeedPropability(x, y, Game.Terrain.props.tileHeightsTexture, Game.Terrain.props.tileMoisturesTexture);
 
         if (Math.random() < propability) {
+            this.startSeedCounter--;
             this.createPlant(x, y);
         }
     };
 
+    this.initializePlants = function() {
+        for (var i = 0; i < 50; i++) {
+            this.seedStartPlant();
+        }
+    }
 
     this.step = function (time) {
-        this.seedStartPlant(time);
-
         var plantPropability = this.kernels.calcPlantPropability(
             time,
             Game.time,

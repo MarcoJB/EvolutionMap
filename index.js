@@ -40,7 +40,7 @@ var Game = {
 
         $('#start_vegetation').on('click', function () {
             that.start('vegetation');
-            $(this).addClass('started').prop('disabled', true);
+            $(this).addClass('started');
         });
 
         $('#game_speed').on('input', function(e) {
@@ -75,6 +75,8 @@ var Game = {
             this.run(0.01);
         } else if (what === 'vegetation') {
             this.vegetationStarted = true;
+            this.Vegetation.initializePlants();
+
         }
     },
     run: function (time) {
