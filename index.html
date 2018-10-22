@@ -9,10 +9,15 @@
         <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
         <script type="text/javascript" src="https://cdn.rawgit.com/gpujs/gpu.js/45103b7f154a12ec639990c6896b21a053eb6a6c/bin/gpu.js"></script>
         <script type="text/javascript" src="components/Timer.js"></script>
+        <script type="text/javascript" src="components/Helper.js"></script>
         <script type="text/javascript" src="components/InteractionHandler.js"></script>
         <script type="text/javascript" src="components/Renderer.js"></script>
         <script type="text/javascript" src="components/Terrain/Terrain.js"></script>
         <script type="text/javascript" src="components/Vegetation/Vegetation.js"></script>
+        <script type="text/javascript" src="components/Creatures/Creatures.js"></script>
+        <script type="text/javascript" src="components/Creatures/Creature.js"></script>
+        <script type="text/javascript" src="components/Creatures/ColorSensor.js"></script>
+        <script type="text/javascript" src="components/Creatures/NeuralNetwork.js"></script>
         <script type="text/javascript" src="index.js"></script>
     </head>
     <body>
@@ -21,7 +26,8 @@
     </div>
     <div id="settings">
         <button id="start_time" class="start">Zeit starten</button><br>
-        <button id="start_vegetation" disabled>Vegetation initiieren</button><br><br>
+        <button id="start_vegetation" disabled>Vegetation initiieren</button><br>
+        <button id="create_creature" disabled>Kreatur erzeugen</button><br><br>
         <input type="checkbox" id="render_active" checked> rendern<br><br>
         Geschwindigkeit:<br>
         <input type="range" id="game_speed" min="0" max="70" value="0"><br><br><br>

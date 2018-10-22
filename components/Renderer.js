@@ -65,7 +65,7 @@ function Renderer(ctx) {
     };
 
     this.renderVegetation = function (plants) {
-        var plant, energy, size;
+        var plant, energy, size, relativPosition;
 
         ctx.fillStyle = 'green';
 
@@ -106,4 +106,33 @@ function Renderer(ctx) {
             }
         }
     };
+
+    this.renderCreatures = function(creatures) {
+        var relativPosition;
+
+        ctx.fillStyle = 'red';
+
+        for (var i = 0; i < creatures.length; i++) {
+            relativPosition = {
+                x: creatures[i].props.x - this.props.origin.x,
+                y: creatures[i].props.y - this.props.origin.y
+            };
+
+            /*ctx.beginPath();
+            ctx.arc(
+                relativPosition.x * this.props.initialScaleFactor * this.props.scaleFactor,
+                relativPosition.y * this.props.initialScaleFactor * this.props.scaleFactor,
+                1 / 2 * this.props.initialScaleFactor * this.props.scaleFactor,
+                0,
+                2 * Math.PI
+            );
+            ctx.fill();*/
+            ctx.fillRect(
+                (relativPosition.x - 1 / 2) * this.props.initialScaleFactor * this.props.scaleFactor,
+                (relativPosition.y - 1 / 2) * this.props.initialScaleFactor * this.props.scaleFactor,
+                1 * this.props.initialScaleFactor * this.props.scaleFactor,
+                1 * this.props.initialScaleFactor * this.props.scaleFactor
+            );
+        }
+    }
 }

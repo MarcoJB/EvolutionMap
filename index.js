@@ -1,6 +1,7 @@
 var Game = {
     ctx: null,
     vegetationStarted: false,
+    creaturesStarted: false,
     renderActive: true,
     speed: 1,
     gpu: null,
@@ -16,7 +17,8 @@ var Game = {
         this.Terrain = new Terrain(this.ctx, terrain_name);
         this.InteractionHandler = new InteractionHandler(this.ctx);
         this.Renderer = new Renderer(this.ctx);
-        this.Vegetation = new Vegetation(this.ctx);
+        this.Vegetation = new Vegetation();
+        this.Creatures = new Creatures();
 
         this.ctx.mozImageSmoothingEnabled = false;
         this.ctx.webkitImageSmoothingEnabled = false;
@@ -27,7 +29,10 @@ var Game = {
         $('#start_time').on('click', function () {
             if ($(this).hasClass('start')) {
                 $(this).text('Pausieren');
-                if (!$('#start_vegetation').hasClass('started')) $('#start_vegetation').prop('disabled', false);
+                if (!$('#start_vegetation').hasClass('started')) {
+                    $('#start_vegetation').prop('disabled', false);
+                    $('#create_creature').prop('disabled', false);
+                }
 
                 that.start('time');
             } else {
@@ -43,6 +48,12 @@ var Game = {
             $(this).addClass('started');
         });
 
+        $('#create_creature').on('click', function () {
+            that.start('creatures');
+            that.Creatures.createCreature();
+            console.log(that.Creatures.props.creatures[that.Creatures.props.creatures.length - 1])
+        });
+
         $('#game_speed').on('input', function(e) {
             that.speed = Math.pow(2, e.target.value / 10);
         });
@@ -54,6 +65,7 @@ var Game = {
     step: function (time) {
         this.Terrain.step(time);
         if (this.vegetationStarted) this.Vegetation.step(time);
+        if (this.creaturesStarted) this.Creatures.step(time);
         if (this.renderActive) this.render();
     },
     render: function () {
@@ -64,6 +76,7 @@ var Game = {
             this.InteractionHandler.props.origin,
             this.InteractionHandler.props.zoomLvl);
         if (this.vegetationStarted) this.Renderer.renderVegetation(this.Vegetation.props.plants);
+        if (this.creaturesStarted) this.Renderer.renderCreatures(this.Creatures.props.creatures);
     },
     stopped: false,
     timer: null,
@@ -76,7 +89,8 @@ var Game = {
         } else if (what === 'vegetation') {
             this.vegetationStarted = true;
             this.Vegetation.initializePlants();
-
+        } else if (what === 'creatures') {
+            this.creaturesStarted = true;
         }
     },
     run: function (time) {
@@ -92,7 +106,6 @@ var Game = {
 
             fps = Math.round(10000 / this.timer.get('last')) / 10
             $('#fps').text(fps + ' fps');
-            fps_cache.push([Game.Vegetation.props.plants.unsorted.length, fps]);
 
             setTimeout(function () {
                 that.run(that.timer.get('last') / 1000);
@@ -101,23 +114,6 @@ var Game = {
     },
     stop: function () {
         this.stopped = true;
-    }
-};
-
-var Helper = {
-    clamp: function(value, min, max) {
-        if (value < min) value = min;
-        else if (value > max) value = max;
-        return value;
-    },
-    random: function(min, max, int) {
-        if (typeof int === 'undefined') int = false;
-
-        if (int) {
-            return Math.floor(Math.random() * (max + 1 - min)) + min;
-        } else {
-            return Math.random() * (max - min) + min;
-        }
     }
 };
 
