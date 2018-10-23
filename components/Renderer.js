@@ -118,7 +118,7 @@ function Renderer(ctx) {
                 y: creatures[i].props.y - this.props.origin.y
             };
 
-            /*ctx.beginPath();
+            ctx.beginPath();
             ctx.arc(
                 relativPosition.x * this.props.initialScaleFactor * this.props.scaleFactor,
                 relativPosition.y * this.props.initialScaleFactor * this.props.scaleFactor,
@@ -126,13 +126,13 @@ function Renderer(ctx) {
                 0,
                 2 * Math.PI
             );
-            ctx.fill();*/
-            ctx.fillRect(
+            ctx.fill();
+            /*ctx.fillRect(
                 (relativPosition.x - 1 / 2) * this.props.initialScaleFactor * this.props.scaleFactor,
                 (relativPosition.y - 1 / 2) * this.props.initialScaleFactor * this.props.scaleFactor,
                 1 * this.props.initialScaleFactor * this.props.scaleFactor,
                 1 * this.props.initialScaleFactor * this.props.scaleFactor
-            );
+            );*/
         }
     }
 }

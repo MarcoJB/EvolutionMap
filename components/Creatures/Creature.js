@@ -4,10 +4,7 @@ function Creature(randomized) {
     this.props = {
         x: 0,
         y: 0,
-        vx: 0,
-        vy: 0,
         rotation: 0,
-        omega: 0,
         birth: Game.time,
         energy: 1,
         colorSensors: [],
@@ -29,18 +26,27 @@ function Creature(randomized) {
         }
 
         var numberHiddenNeurons = Helper.random(5, 15, true);
-        this.props.neuralNetwork = new NeuralNetwork(1 + numberColorSensors * 3, numberHiddenNeurons, ['atan', 'atan', 'hs', 'hs']);
+        this.props.neuralNetwork = new NeuralNetwork(1 + numberColorSensors * 3, numberHiddenNeurons, ['lin', 'lin', 'hs', 'hs']);
     };
 
     if (randomized) this.initRandomized();
 
 
-    this.step = function(time) {
-        this.props.x += time * this.props.vx;
-        this.props.y += time * this.props.vy;
-        this.props.rotation += time * this.props.omega;
+    this.kernelFunctions = {
+        getMoisture: function(moisture, x, y) {
+            return moisture[y][x];
+        }
+    };
 
-        var angle, distance, dx, dy, x, y, img_x, img_y, color, ax, ay;
+    this.kernels = {
+        getMoisture: Game.gpu.createKernel(this.kernelFunctions.getMoisture, {
+            output: [1]
+        })
+    };
+
+
+    this.step = function(time) {
+        var angle, distance, dx, dy, tile_x, tile_y, red, green, blue, moisture;
 
         var inputs = [this.props.energy];
 
@@ -51,26 +57,37 @@ function Creature(randomized) {
             dx = Math.sin(angle) * distance;
             dy = Math.cos(angle) * distance;
 
-            x = this.props.x + dx;
-            y = this.props.y + dy;
+            tile_x = Helper.clamp(Math.floor(this.props.x + dx), 0, 255);
+            tile_y = Helper.clamp(Math.floor(this.props.y + dy), 0, 255);
 
-            img_x = Math.round(x * Game.ctx.canvas.height / 256);
-            img_y = Math.round(y * Game.ctx.canvas.height / 256);
+            moisture = this.kernels.getMoisture(Game.Terrain.props.tileMoisturesTexture, tile_x, tile_y)[0];
 
-            color = Game.ctx.getImageData(img_x, img_y, 1, 1).data;
+            if (Game.Terrain.props.tileHeights[tile_y][tile_x] > Game.Terrain.props.waterLvl) {
+                red = ((240 - 120 * Game.Terrain.props.tileHeights[tile_y][tile_x] / 255) * (1 - moisture));
+                green = ((230 - 180 * Game.Terrain.props.tileHeights[tile_y][tile_x] / 255) * (1 - moisture));
+                blue = ((120 - 90 * Game.Terrain.props.tileHeights[tile_y][tile_x] / 255) * (1 - moisture));
+            } else if (Game.Terrain.props.tileHeights[tile_y][tile_x] > Game.Terrain.props.waterLvl - 20) {
+                red = (37 + (67 - 37) * (Game.Terrain.props.tileHeights[tile_y][tile_x] - (Game.Terrain.props.waterLvl - 20)) / 20);
+                green = (84 + (190 - 143) * (Game.Terrain.props.tileHeights[tile_y][tile_x] - (Game.Terrain.props.waterLvl - 20)) / 20);
+                blue = (132 + (165 - 132) * (Game.Terrain.props.tileHeights[tile_y][tile_x] - (Game.Terrain.props.waterLvl - 20)) / 20);
+            } else {
+                red = 37;
+                green = 84;
+                blue = 132;
+            }
 
-            inputs.push(color[0]);
-            inputs.push(color[1]);
-            inputs.push(color[2]);
+            inputs.push(red / 255);
+            inputs.push(green / 255);
+            inputs.push(blue / 255);
         }
 
         var outputs = this.props.neuralNetwork.calc(inputs);
 
-        ax = Math.sin(this.props.rotation) * outputs[0];
-        ay = Math.cos(this.props.rotation) * outputs[0];
+        vx = Math.sin(this.props.rotation) * outputs[0];
+        vy = Math.cos(this.props.rotation) * outputs[0];
 
-        this.props.vx += time * ax;
-        this.props.vy += time * ay;
-        this.props.omega += time * outputs[1];
+        this.props.x += time * vx;
+        this.props.y += time * vy;
+        this.props.rotation += time * outputs[1];
     }
 }
