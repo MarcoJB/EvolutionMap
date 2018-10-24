@@ -26,15 +26,37 @@ function Renderer(ctx) {
             }
 
             this.color(red/255, green/255, blue/255);
+        },
+        render: function(origin, zoomLvl, waterLvl, heights, moistures, plants) {
+            this.color(1, 0.5, 1);
         }
     };
 
     this.kernels = {
         renderTerrain: Game.gpu.createKernel(this.kernelFunctions.renderTerrain, {
-            outputToTexture: true,
             output: [256, 256],
             graphical: true
+        }),
+        render: Game.gpu.createKernel(this.kernelFunctions.render, {
+            output: [ctx.canvas.height, ctx.canvas.height],
+            outputToTexture: true,
+            graphical: true
         })
+    };
+
+
+    this.render = function(origin, zoomLvl, waterLvl, tileHeights, tileMoistures, plants) {
+        this.kernels.render([origin.x, origin.y], zoomLvl, waterLvl, tileHeights, tileMoistures, plants);
+
+        /*var canvasTemp = this.kernels.render.getCanvas();
+
+        ctx.drawImage(
+            canvasTemp,
+            0,
+            0,
+            canvasTemp.width,
+            canvasTemp.height
+        );*/
     };
 
 
@@ -65,9 +87,12 @@ function Renderer(ctx) {
     };
 
     this.renderVegetation = function (plants) {
+        //this.kernels.renderVegetation(plants);
+
         var plant, energy, size, relativPosition;
 
         ctx.fillStyle = 'green';
+        ctx.beginPath();
 
         for (var y = 0; y < plants.length; y++) {
             for (var x = 0; x < plants[y].length; x++) {
@@ -87,7 +112,10 @@ function Renderer(ctx) {
                     relativPosition.y > -size / 2 &&
                     relativPosition.x < 256 / this.props.scaleFactor + size / 2 &&
                     relativPosition.y < 256 / this.props.scaleFactor + size / 2) {
-                    /*ctx.beginPath();
+                    ctx.moveTo(
+                        (relativPosition.x + size / 2) * this.props.initialScaleFactor * this.props.scaleFactor,
+                        relativPosition.y * this.props.initialScaleFactor * this.props.scaleFactor
+                    );
                     ctx.arc(
                         relativPosition.x * this.props.initialScaleFactor * this.props.scaleFactor,
                         relativPosition.y * this.props.initialScaleFactor * this.props.scaleFactor,
@@ -95,34 +123,38 @@ function Renderer(ctx) {
                         0,
                         2 * Math.PI
                     );
-                    ctx.fill();*/
-                    ctx.fillRect(
+                    //ctx.fill();
+                    /*ctx.fillRect(
                         (relativPosition.x - size / 2) * this.props.initialScaleFactor * this.props.scaleFactor,
                         (relativPosition.y - size / 2) * this.props.initialScaleFactor * this.props.scaleFactor,
                         size * this.props.initialScaleFactor * this.props.scaleFactor,
                         size * this.props.initialScaleFactor * this.props.scaleFactor
-                    );
+                    );*/
                 }
             }
         }
+
+        ctx.fill();
     };
 
     this.renderCreatures = function(creatures) {
-        var relativPosition;
+        var relativPosition, creature, colorSensor, dx, dy;
 
         ctx.fillStyle = 'red';
+        ctx.strokeStyle = 'black';
 
         for (var i = 0; i < creatures.length; i++) {
+            creature = creatures[i];
             relativPosition = {
-                x: creatures[i].props.x - this.props.origin.x,
-                y: creatures[i].props.y - this.props.origin.y
+                x: creature.props.x - this.props.origin.x,
+                y: creature.props.y - this.props.origin.y
             };
 
             ctx.beginPath();
             ctx.arc(
                 relativPosition.x * this.props.initialScaleFactor * this.props.scaleFactor,
                 relativPosition.y * this.props.initialScaleFactor * this.props.scaleFactor,
-                1 / 2 * this.props.initialScaleFactor * this.props.scaleFactor,
+                1 / 4 * this.props.initialScaleFactor * this.props.scaleFactor,
                 0,
                 2 * Math.PI
             );
@@ -133,6 +165,24 @@ function Renderer(ctx) {
                 1 * this.props.initialScaleFactor * this.props.scaleFactor,
                 1 * this.props.initialScaleFactor * this.props.scaleFactor
             );*/
+
+            ctx.beginPath();
+            for (var j = 0; j < creature.props.colorSensors.length; j++) {
+                colorSensor = creature.props.colorSensors[j];
+
+                dx = Math.sin(creature.props.rotation + colorSensor.props.direction) * colorSensor.props.distance;
+                dy = Math.cos(creature.props.rotation + colorSensor.props.direction) * colorSensor.props.distance;
+
+                ctx.moveTo(
+                    relativPosition.x * this.props.initialScaleFactor * this.props.scaleFactor,
+                    relativPosition.y * this.props.initialScaleFactor * this.props.scaleFactor
+                );
+                ctx.lineTo(
+                    (relativPosition.x + dx) * this.props.initialScaleFactor * this.props.scaleFactor,
+                    (relativPosition.y + dy) * this.props.initialScaleFactor * this.props.scaleFactor
+                );
+            }
+            ctx.stroke();
         }
     }
 }

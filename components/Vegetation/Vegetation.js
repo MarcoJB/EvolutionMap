@@ -117,7 +117,7 @@ function Vegetation() {
         for (var i = 0; i < 50; i++) {
             this.seedStartPlant();
         }
-    }
+    };
 
     this.step = function (time) {
         var plantPropability = this.kernels.calcPlantPropability(
@@ -132,7 +132,7 @@ function Vegetation() {
             for (var x = 0; x < 256; x++) {
                 if (this.props.plants[y][x][4] !== 0 && Game.time - this.props.plants[y][x][2] > this.props.plants[y][x][3]) {
                     this.killPlant(x, y);
-                } else if (plantPropability[y][x] > 0.001 && plantPropability[y][x] > Math.random()) {
+                } else if (plantPropability[y][x] !== 0 && plantPropability[y][x] > Helper.random(0, 1)) {
                     this.createPlant(x, y);
                 }
             }

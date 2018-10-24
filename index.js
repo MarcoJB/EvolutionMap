@@ -5,14 +5,15 @@ var Game = {
     renderActive: true,
     speed: 1,
     gpu: null,
+    gpuVeg: null,
     time: 0,
     init: function (terrain_name) {
         var that = this;
 
-        this.gpu = new GPU();
-
         this.ctx = $('#terrain')[0].getContext('2d');
         $(this.ctx.canvas).attr('width', $(this.ctx.canvas).height()).attr('height', $(this.ctx.canvas).height());
+
+        this.gpu = new GPU();
 
         this.Terrain = new Terrain(this.ctx, terrain_name);
         this.InteractionHandler = new InteractionHandler(this.ctx);
@@ -69,6 +70,14 @@ var Game = {
         if (this.renderActive) this.render();
     },
     render: function () {
+        /*this.Renderer.render(
+            this.InteractionHandler.props.origin,
+            this.InteractionHandler.props.zoomLvl,
+            this.Terrain.props.waterLvl,
+            this.Terrain.props.tileHeightsTexture,
+            this.Terrain.props.tileMoisturesTexture,
+            this.Vegetation.props.plants
+        );*/
         this.Renderer.renderTerrain(
             this.Terrain.props.tileHeightsTexture,
             this.Terrain.props.tileMoisturesTexture,
@@ -104,7 +113,7 @@ var Game = {
             this.timer.step();
             $('#fps').text(Math.round(50000 / (this.timer.get(-1) + this.timer.get(-2) + this.timer.get(-3) + this.timer.get(-4) + this.timer.get(-5))) / 10 + ' fps');
 
-            fps = Math.round(10000 / this.timer.get('last')) / 10
+            fps = Math.round(10000 / this.timer.get('last')) / 10;
             $('#fps').text(fps + ' fps');
 
             setTimeout(function () {

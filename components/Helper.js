@@ -18,7 +18,7 @@ Helper.random = function(min, max, int) {
 };
 
 Helper.matMul = function(matr, vect) {
-    if (matr[0].length !== vect.length) throw(new Error('Vector length and matrix length differ: ' + matr.length + ' vs. ' + vect.length));
+    if (matr[0].length !== vect.length) throw(new Error('Vector length and matrix length differ: ' + matr[0].length + ' vs. ' + vect.length));
 
     var res = [];
 
